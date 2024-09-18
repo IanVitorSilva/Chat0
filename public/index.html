@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="pt-br" translate="no">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css"
+    integrity="sha512-MV7K8+y+gLIBoVD59lQIYicR65iaqukzvf/nwasF0nqhPay5w/9lJmVM2hMDcnK1OnMGCdVK+iQrJ7lzPJQd1w=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&family=Roboto:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="shortcut icon" href="https://i.imgur.com/avB6xZC.png" type="image/x-icon">
+  <title>Chat0</title>
+</head>
+
+<body>
+
+  <!--Notification-->
+  <audio id="notification"></audio>
+
+  <header>
+    <img src="https://i.imgur.com/avB6xZC.png" alt="logo">
+    <button id="users-btn"><i class="fa fa-user"></i><span id="connected-users"></span></button>
+    <button id="myBtn"><i class="fa fa-gear"></i></button>
+  </header>
+
+  <div id="user-modal" class="modal">
+
+    <div class="modal-content">
+      <span class="close">&times;</span>
+
+      <form id="user-form">
+
+        <div class="form-title">
+          <h2>Tema/Cor</h2>
+        </div>
+
+        <section id="theme-container">
+
+          <div class="theme-option">
+            <img src="https://i.imgur.com/3N5Mwzl.png" alt="Theme preview">
+
+            <div class="theme-form">
+              <label for="light">Dark</label>
+              <input id="light-input" class="theme-input" type="radio" name="theme" value="light">
+            </div>
+          </div>
+
+          <div class="theme-option">
+            <img src="https://i.imgur.com/nVyGfKt.png" alt="Theme preview">
+
+            <div class="theme-form">
+              <label for="light">Light</label>
+              <input id="dark-input" class="theme-input" type="radio" name="theme" value="dark">
+            </div>
+          </div>
+
+        </section>
+
+        <div class="user-form-input">
+          <label for="name">Nome</label>
+          <input id="name-input" type="text" placeholder="Digite seu nome" required min="1" max="30">
+        </div>
+        <div class="user-form-input">
+          <label for="image">Imagem</label>
+          <input id="img-input" placeholder="Digite uma URL de imagem" type="text">
+        </div>
+        <input id="user-form-submit" type="submit" value="Salvar">
+      </form>
+    </div>
+  </div>
+
+  <main id="messages">
+  </main>
+
+  <form id="form">
+    <input id="text-box" type="text" placeholder="Digite algo..." autocomplete="off" />
+    <button id="emoji-btn" class="fa fa-smile"></button>
+    <button id="img_btn" class="fa fa-image"></button>
+    <button>Enviar</button>
+  </form>
+
+  <div id="emoji-modal">
+    <div id="emoji-container">
+      <button value="&#x1F600;" onclick="insertEmoji(this.value)" >&#x1F600;</button>
+      <button value="&#x1F602;" onclick="insertEmoji(this.value)" >&#x1F602;</button>
+      <button value="&#x1F610;" onclick="insertEmoji(this.value)" >&#x1F610;</button>
+      <button value="&#x1F611;" onclick="insertEmoji(this.value)" >&#x1F611;</button>
+      <button value="&#x1F612;" onclick="insertEmoji(this.value)" >&#x1F612;</button>
+      <button value="&#x1F44D;" onclick="insertEmoji(this.value)" >&#x1F44D;</button>
+      <button value="&#x1F928;" onclick="insertEmoji(this.value)" >&#x1F928;</button>
+      <button value="&#x1F914;" onclick="insertEmoji(this.value)" >&#x1F914;</button>
+      <button value="&#x1F641;" onclick="insertEmoji(this.value)" >&#x1F641;</button>
+      <button value="&#x1F644;" onclick="insertEmoji(this.value)" >&#x1F644;</button>
+      <button value="&#x1F62D;" onclick="insertEmoji(this.value)" >&#x1F62D;</button>
+      <button value="&#x1F62E;" onclick="insertEmoji(this.value)" >&#x1F62E;</button>
+      <button value="&#x1F61C;" onclick="insertEmoji(this.value)" >&#x1F61C;</button>
+    </div>
+  </div>
+
+
+  <div id="imgModal">
+    <div class="img-modal-content">
+      <span id="close-img" class="close">&times;</span>
+      <form id="img-form">
+        <div class="img-form-input">
+          <label for="img-url">URL</label>
+          <input id="img-url" type="url" required>
+        </div>
+        <input id="img-form-submit" type="submit" value="Enviar">
+      </form>
+    </div>
+  </div>
+
+  <!--Typing Div-->
+
+  <div id="typing_container">
+  </div>
+
+  <!-- JS Codes -->
+
+  <script>
+    const textBox = document.getElementById('text-box');
+
+    function insertEmoji(value){
+      textBox.value += value 
+    }
+  </script>
+
+  <script src="userModal.js"></script>
+  <script src="imgModal.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script type="module">
+
+    import createChat from './chat.js'
+    import userData from './userData.js'
+
+    const chat = createChat()
+    const user = userData()
+
+    const socket = io();
+
+    const messages = document.getElementById('messages');
+    const form = document.getElementById('form');
+    const input = document.getElementById('text-box');
+    const theme = window.localStorage.getItem("theme");
+
+    if (theme === "dark") document.body.classList.add("dark");
+
+    checkRadioInput()
+
+    // LocalStorage variables
+
+    var userForm = document.getElementById('user-form');
+    var userName = document.getElementById('name-input');
+    var userImage = document.getElementById('img-input');
+    var userArray = []
+
+    /* Img Form */
+    var imgForm = document.getElementById('img-form');
+    var imageInput = document.getElementById('img-url');
+
+    imgForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (imageInput.value) {
+        let data = user.getUserData()
+        socket.emit('chat img', imageInput.value, data[0], data[1]);
+        createImage(imageInput.value)
+        imageInput.value = '';
+        imgModal.style.display = "none";
+      }
+    });
+
+    /* User Form */
+
+    function checkRadioInput() {
+      let inputs = document.querySelectorAll(".theme-input")
+
+      for (const radioButton of inputs) {
+        if (radioButton.value != theme) {
+          radioButton.checked = true;
+          break;
+        }
+      }
+    }
+
+    userForm.addEventListener('submit', function (e) {
+      e.preventDefault()
+
+      let name = userName.value
+      let image = userImage.value
+      let inputs = document.querySelectorAll(".theme-input")
+
+      for (const radioButton of inputs) {
+        if (radioButton.checked) {
+          user.changeTheme(radioButton.value);
+          break;
+        }
+      }
+
+      user.updateUserData(name, image)
+    })
+
+    // Typing
+
+    form.addEventListener("keyup", function (e) {
+      e.preventDefault();
+      let data = user.getUserData()
+      socket.emit('typing', data[1])
+    })
+
+    // Socket
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (input.value) {
+        let data = user.getUserData()
+        socket.emit('chat message', input.value, data[0], data[1]);
+        createMessage(input.value)
+        input.value = '';
+      }
+    });
+
+    const getHour = () => {
+      let date = new Date()
+      let hour = date.getHours()
+      let min = date.getMinutes()
+
+      if (hour < 10) {
+        hour = '0' + hour
+      }
+
+      if (min < 10) {
+        min = '0' + min
+      }
+
+      return `${hour}:${min}`
+    }
+
+    /* Images */
+
+    function createImage(url) {
+      var item = document.createElement('div');
+      item.innerHTML =
+        `
+      <div id="img-send">
+      <div class="img-send-content">
+        <img src="${url}">
+        <span>${getHour()}</span>
+      </div>
+    </div>
+      `
+      window.scrollTo(0, document.body.scrollHeight);
+      messages.appendChild(item);
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    socket.on('chat img', function (img, name, userImg) {
+      var item = document.createElement('div');
+      playSound();
+      item.innerHTML =
+        `
+      <div class="received">
+        <div class="user">
+          <div class="image">
+            <img src="${userImg}" alt="user image">
+          </div>
+        </div>
+        <div class="img-content">
+          <h3 class="name">${name}</h3>
+          <img src="${img}">
+          <span>${getHour()}</span>
+        </div>
+      </div>
+      `
+      window.scrollTo(0, document.body.scrollHeight);
+    });
+
+    /* Notify */
+
+    function notifyUser(name, msg) {
+      if (document.visibilityState === "hidden") {
+
+        Notification.requestPermission().then(perm => {
+          if (perm === "granted") {
+            const notification = new Notification(name, {
+              body: msg,
+              icon: "https://i.imgur.com/avB6xZC.png",
+              tag: name
+            });
+            notification.onclick = function () {
+              let notificationURL = 'http://localhost:3000/'
+              if (notificationURL) {
+                const existingTab = window.open('http://localhost:3000/', '_blank');
+                if (existingTab) {
+                  existingTab.location.href = notificationURL;
+                } else {
+                  window.open(notificationURL, '_blank');
+                }
+              }
+            };
+          }
+        })
+      }
+    }
+
+    /* Messages */
+
+    function createMessage(msg) {
+      var item = document.createElement('div');
+      item.innerHTML =
+        `
+      <div id="send">
+      <div class="send-content">
+        <p>${msg}</p>
+        <span>${getHour()}</span>
+      </div>
+    </div>
+      `
+      messages.appendChild(item);
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    socket.on('chat message', function (msg, name, img) {
+      var item = document.createElement('div');
+      let typing = document.querySelector("#typing_container")
+      item.innerHTML =
+        `
+      <div class="received">
+      <div class="user">
+        <div class="image">
+          <img src="${img}" alt="user image">
+        </div>
+      </div>
+      <div class="content">
+        <h3 class="name">${name}</h3>
+        <p>${msg}</p>
+        <span>${getHour()}</span>
+      </div>
+    </div>
+      `
+      window.scrollTo(0, document.body.scrollHeight);
+      messages.appendChild(item);
+      typing.innerHTML = ""
+      hideTyping()
+      messages.appendChild(item);
+      if (document.visibilityState === "hidden") {
+        notifyUser(name, msg)
+      } else {
+        playSound();
+      }
+    });
+
+    // Update Users Array
+
+    socket.on('add-user', function (command) {
+      chat.addUser(command)
+      loadUsers()
+    })
+
+    socket.on('remove-user', function (command) {
+      chat.removeUser(command)
+      loadUsers()
+    })
+
+    socket.on('setup', (state) => {
+      const playerId = socket.id
+      chat.setState(state)
+      loadUsers()
+    })
+
+    // Typing
+
+    socket.on('typing', function (img) {
+      let container = document.querySelector("#typing_container")
+      container.innerHTML =
+        `
+          <img src="${img}" alt="typing img">
+          <p>•••</p>   
+        `
+    });
+
+    function hideTyping() {
+      let container = document.querySelector("#typing_container")
+      setTimeout(() => {
+        container.innerHTML = ""
+      }, 200)
+    }
+
+    //
+
+    function loadUsers(){
+      let users = document.getElementById('connected-users')
+
+      users.innerText = chat.state.length
+    }
+
+    loadUsers()
+
+    // Notification
+
+    function playSound() {
+      let audio = document.getElementById("notification")
+      audio.src = "https://od.lk/s/MTBfMjMwOTAyMjcxXw/notification.mp3"
+      audio.play()
+    }
+  </script>
+</body>
+
+</html>
